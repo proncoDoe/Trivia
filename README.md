@@ -345,4 +345,4 @@ This endpoint either creates a new question or returns search results.
 
 Kerry McCarthy instructor of Trivia API.
  Udacity.
-<https://www.sc.com/>
+<ALX.com/>

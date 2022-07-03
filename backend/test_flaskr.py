@@ -1,9 +1,19 @@
 import os, unittest, json
+from posixpath import dirname
 from flask_sqlalchemy import SQLAlchemy
 
 from flaskr import create_app
-from models import setup_db
+from models import DB_HOST, setup_db
+from os.path import dirname
 
+from dotenv import load_dotenv
+dotenv_path = os.path.join(dirname(__file__), '.env')
+load_dotenv(dotenv_path)
+
+DB_TEST_HOST = os.getenv('DB_TEST_HOST')
+DB_TEST_USER = os.getenv('DB_TEST_USER')
+DB_TEST_PASSWORD = os.getenv('DB_TEST_PASSWORD')
+DB_TEST_NAME = os.getenv('DB_TEST_NAME')
 
 class TriviaTestCase(unittest.TestCase):
     """This class represents the trivia test case"""
@@ -11,9 +21,9 @@ class TriviaTestCase(unittest.TestCase):
     def setUp(self):  
         self.app = create_app()
         self.client = self.app.test_client
-        self.database_name = "trivia_test"
+        self.database_name = DB_TEST_NAME
         self.database_path = "postgresql://{}:{}@{}/{}".format(
-         "student", "student", "localhost:5432", self.database_name
+         DB_TEST_USER, DB_TEST_PASSWORD, DB_TEST_HOST, self.database_name
       )
   
         setup_db(self.app, self.database_path)

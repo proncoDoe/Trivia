@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import random
 
+
 from models import setup_db, Question, Category
 
 QUESTIONS_PER_PAGE = 10
@@ -227,50 +228,42 @@ def create_app(test_config=None):
     one question at a time is displayed, the user is allowed to answer
     and shown whether they were correct or not.
     """
+
     @app.route('/quizzes', methods=['POST'])
     def get_random_quiz_question():
-        
+        body = request.get_json()
+        previous = body.get('previous_questions')
+        category = body['quiz_category']['id']
+
         try:
-                body = request.get_json()
+            if category:
+                questions = Question.query.filter(Question.category == category).all()
+            else:
+                questions = Question.query.all()
 
-                previous = body.get('previous_questions')
+            current_questions = [question.format() for question in questions]
+            random_question = random.choice(current_questions)
 
-                categ = body.get('quiz_category')
-                
-                if ((categ is None) or (previous is None)):
-                    abort(400)
-                if (categ['id'] == 0):
-                    questions = Question.query.all()
-                else:
-                    questions = Question.query.filter_by(categ=categ['id']).all()
-                total = len(questions)
+            while random_question['id'] in previous:
+                if len(previous) == len(current_questions):
+                    random_question = None
+                    break
+                random_question = random.choice(current_questions)
 
-                def get_random_question():
-                    return questions[random.randrange(0, len(questions), 1)]
-
-                def check_if_used(question):
-                    used = False
-                    for q in previous:
-                        if (q == question.id):
-                            used = True
-                    return used
-                question = get_random_question()
-
-                while (check_if_used(question)):
-                    question = get_random_question()
-
-                    if (len(previous) == total):
-                        return jsonify({
-                            'success': True
-                        })
-
-                return jsonify({
-                    'success': True,
-                    'question': question.format()
-                })
-        
+            return jsonify({
+                "success": True,
+                "question": random_question
+            })
         except:
-               abort(422)
+            abort(422)
+                
+    @app.errorhandler(400)
+    def bad_request(error):
+        return jsonify({
+            "success": False,
+            "error": 400,
+            "message": "bad request"
+        }), 400
         
     """
     @TODO:
@@ -284,14 +277,6 @@ def create_app(test_config=None):
             "error": 404,
             "message": "resource not found"
         }), 404
-    
-    @app.errorhandler(400)
-    def bad_request_error(error):
-        return jsonify({
-            "success": False,
-            "error": 400,
-            "message": "bad request"
-        }), 400
         
     @app.errorhandler(422)
     def unprocessable(error):
